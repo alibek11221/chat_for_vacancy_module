@@ -1,7 +1,13 @@
 {
+  "config": {
+    "platform": {
+      "php": "7.2.4"
+    }
+  },
   "require": {
     "cboden/ratchet": "^0.4.3",
-    "ext-json": "*"
+    "ext-json": "*",
+    "ext-pdo": "*"
   },
   "autoload": {
     "psr-4": {

@@ -2,11 +2,15 @@ const conn = new WebSocket('ws://localhost:8090');
 const button = $('#sender');
 const text = $('#text');
 const chat = $('#chat');
-const me = {id: '', ms: ''};
+const me = {roomId: '', type: '', myId: ''};
 let myId;
 let message = '';
 conn.onopen = function (e) {
-    console.log(e);
+    me.type = 'init';
+    me.roomId = 2;
+    me.myId = 100;
+    console.log(me);
+    conn.send(JSON.stringify(me));
 };
 button.on('click', (e) => {
     me.ms = text.val();
@@ -15,23 +19,23 @@ button.on('click', (e) => {
 });
 conn.onmessage = function (e) {
     let getMsg = JSON.parse(e.data);
-    console.log(e.data);
-    switch (getMsg.type) {
-        case 'init':
-            me.id = getMsg.text;
-            break;
-        case 'msg':
-            if (getMsg.from === me.id) {
-                chat.append(`<li style="color:green;">${getMsg.text}</li>`)
-            } else {
-                chat.append(`<li style="color:red;">${getMsg.text}</li>`)
-            }
-            break;
-    }
+    console.log(getMsg);
+    // switch (getMsg.type) {
+    //     case 'init':
+    //         me.id = getMsg.text;
+    //         break;
+    //     case 'msg':
+    //         if (getMsg.from === me.id) {
+    //             chat.append(`<li style="color:green;">${getMsg.text}</li>`)
+    //         } else {
+    //             chat.append(`<li style="color:red;">${getMsg.text}</li>`)
+    //         }
+    //         break;
+    // }
 
 };
 conn.onclose = event => {
-    location.href = location.href;
+    console.log(event);
 };
 // conn.onmessage = function(e) {
 // 	var message = JSON.parse(e.data);
