@@ -11,12 +11,12 @@ $_SESSION['id'] = uniqid('', true);
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 $server = IoServer::factory(
-    new HttpServer(
-        new WsServer(
-            new Chat()
-        )
-    ),
-    8090
+        new HttpServer(
+                new WsServer(
+                        new Chat()
+                )
+        ),
+        8090
 );
 
 $server->run();
