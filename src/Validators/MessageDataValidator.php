@@ -41,7 +41,16 @@ class MessageDataValidator
      */
     public function validateFirstMessageData(array $data, SplObjectStorage $clients, ConnectionInterface $from)
     {
-        return $from->roomId === 0 && $from->id === 0 && !$this->isAlreadyInClients($data, $clients);
+        return $from->roomId === 0
+                && $from->id === 0
+                && !empty($this->chatRoomsRepository->findChatRoomById((int)$data['roomId']))
+                && !empty(
+                $this->chatParticipantsRepository->findChatParticipantDataBy(
+                        (int)$data['roomId'],
+                        (int)$data['participantId']
+                )
+                )
+                && !$this->isAlreadyInClients($data, $clients);
     }
 
     private function isAlreadyInClients(array $data, SplObjectStorage $clients)
