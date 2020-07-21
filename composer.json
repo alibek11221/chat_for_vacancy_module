@@ -7,8 +7,7 @@
   "require": {
     "cboden/ratchet": "^0.4.3",
     "ext-json": "*",
-    "ext-pdo": "*",
-    "php-di/php-di": "^6.2"
+    "ext-pdo": "*"
   },
   "autoload": {
     "psr-4": {
