@@ -17,7 +17,8 @@ class MessageRepository
      */
     public function getMessagesByRoom(): array
     {
-        return json_decode(file_get_contents($this->path), true) ? null : [];
+        $messages = json_decode(file_get_contents($this->path), true);
+        return isset($messages) ? $messages : [];
     }
 
     public function saveMessage(int $roomId, int $participantId, string $text): void
@@ -34,7 +35,7 @@ class MessageRepository
      */
     public function setPath(string $path)
     {
-        $this->path = sprintf("%s/data/%s.json", dirname(dirname(__DIR__)), $path);
+        $this->path = sprintf("%s/Data/Messages/%s.json", dirname(dirname(__DIR__)), $path);
         if (!file_exists($path)) {
             $file = fopen($this->path, 'w');
             fclose($file);
