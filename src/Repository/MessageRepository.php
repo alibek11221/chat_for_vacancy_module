@@ -4,6 +4,8 @@
 namespace App\Repository;
 
 
+use Ratchet\ConnectionInterface;
+
 class MessageRepository
 {
 
@@ -21,12 +23,25 @@ class MessageRepository
         return isset($messages) ? $messages : [];
     }
 
-    public function saveMessage(int $roomId, int $participantId, string $text): void
+    /**
+     * @param ConnectionInterface $from
+     * @param string $text
+     *
+     * @return array
+     */
+    public function saveMessage(ConnectionInterface $from, string $text): array
     {
         $messages = json_decode(file_get_contents($this->path), true);
-        $message = ['room' => $roomId, 'particp' => $participantId, 'text' => $text];
+        $message = [
+                'room' => $from->roomId,
+                'participantId' => $from->id,
+                'name' => $from->name,
+                'text' => $text,
+                'date' => time()
+        ];
         $messages[] = $message;
         file_put_contents($this->path, json_encode($messages, JSON_PRETTY_PRINT, 512));
+        return $message;
     }
 
     /**
@@ -36,7 +51,7 @@ class MessageRepository
     public function setPath(string $path)
     {
         $this->path = sprintf("%s/Data/Messages/%s.json", dirname(dirname(__DIR__)), $path);
-        if (!file_exists($path)) {
+        if (!file_exists($this->path)) {
             $file = fopen($this->path, 'w');
             fclose($file);
         }

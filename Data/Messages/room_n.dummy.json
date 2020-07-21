@@ -1,0 +1,16 @@
+[
+  {
+    "room": 2,
+    "participantId": 150,
+    "name": "name",
+    "text": "asdf",
+    "date": 1595335206
+  },
+  {
+    "room": 2,
+    "participantId": 100,
+    "name": "name",
+    "text": "asdf",
+    "date": 1595335276
+  }
+]

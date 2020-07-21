@@ -5,67 +5,50 @@ const chat = $('#chat');
 const roomId = $('#room');
 const meId = $('#me');
 const initer = $('#initer');
-let token;
 const msg = {roomId: '', type: '', participantId: ''};
-const messages = window.localStorage.getItem('messages') === null ? [] : JSON.parse(localStorage.getItem('messages'));
-let messageCache = messages.length ? messages : [];
 conn.onopen = function (e) {
 
 };
 initer.on('click', (e) => {
     msg.type = 'init';
     msg.roomId = roomId.val();
-    msg.participantId = meId.val();
     conn.send(JSON.stringify(msg));
 
 });
 button.on('click', (e) => {
-    msg.type = 'message';
     msg.text = text.val();
-    msg.data = new Date();
-    conn.send(JSON.stringify(msg));
+    const sendMessage = {
+        type: 'message',
+        text: text.val()
+    };
+    conn.send(JSON.stringify(sendMessage));
 });
 conn.onmessage = function (e) {
     let getMsg = JSON.parse(e.data);
+    console.log(getMsg);
     switch (getMsg.type) {
         case 'init':
-            token = getMsg.token;
-            if (messages.token !== token) {
-                msg.type = 'getmessages';
-                conn.send(JSON.stringify(msg));
-            } else {
-                messages.map(x => {
-                    if (x.participant_id === msg.participantId) {
-                        chat.append(`<li style="color:green;"><b>${rendertime(new Date(Date.parse(x.message_date)))}</b> ${x.text}</li>`)
-                    } else {
-                        chat.append(`<li style="color:red;"><b>${rendertime(new Date(Date.parse(x.message_date)))}</b> ${x.text}</li>`)
-                    }
-                });
-            }
-            break;
-        case 'message':
-            if (getMsg.participantId === msg.participantId) {
-                chat.append(`<li style="color:green;"><b>${rendertime(new Date(Date.parse(getMsg.data)))}</b>${getMsg.text}</li>`)
-            } else {
-                chat.append(`<li style="color:red;"><b>${rendertime(new Date(Date.parse(getMsg.data)))}</b>${getMsg.text}</li>`)
-            }
-            break;
-        case 'getmessages':
-            getMsg.messages.map(x => {
-                if (x.participant_id === msg.participantId) {
-                    chat.append(`<li style="color:green;"><b>${rendertime(new Date(Date.parse(x.message_date)))}</b> ${x.text}</li>`)
+            msg.id = getMsg.id;
+            getMsg.data.map(x => {
+                if (x.participantId === msg.id) {
+                    chat.append(`<li style="color:green;"><b>${new Date(x.date).toLocaleTimeString()}</b> <i>${x.name}</i> ${x.text}</li>`)
                 } else {
-                    chat.append(`<li style="color:red;"><b>${rendertime(new Date(Date.parse(x.message_date)))}</b> ${x.text}</li>`)
+                    chat.append(`<li style="color:red;"><b>${new Date(x.date).toLocaleTimeString()}</b> <i>${x.name}</i> ${x.text}</li>`)
                 }
             });
-            messageCache = {token: getMsg.token, messages: getMsg.messages};
-            localStorage.setItem('messages', JSON.stringify(messageCache));
+            break;
+        case 'message':
+            if (getMsg.message.participantId === msg.id) {
+                chat.append(`<li style="color:green;"><b>${new Date(getMsg.message.date).toLocaleTimeString()}</b> <i>${getMsg.message.name}</i> ${getMsg.message.text}</li>`)
+            } else {
+                chat.append(`<li style="color:red;"><b>${new Date(getMsg.message.date).toLocaleTimeString()}</b> <i>${getMsg.message.name}</i> ${getMsg.message.text}</li>`)
+            }
             break;
     }
 
 };
 conn.onclose = event => {
-    location.href = location.href;
+
     console.log(event);
 };
 
@@ -101,7 +84,3 @@ Date.prototype.today = function () {
     return ((this.getDate() < 10) ? "0" : "") + this.getDate() + "/" + (((this.getMonth() + 1) < 10) ? "0" : "") + (this.getMonth() + 1) + "/" + this.getFullYear();
 };
 
-// For the time now
-rendertime = function (date) {
-    return ((date.getHours() < 10) ? "0" : "") + date.getHours() + ":" + ((date.getMinutes() < 10) ? "0" : "") + date.getMinutes();
-};

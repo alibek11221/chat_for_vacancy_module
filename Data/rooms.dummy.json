@@ -1,0 +1,28 @@
+{
+  "1": {
+    "roomName": "code_name",
+    "roomParticipants": {
+      "1": {
+        "id": 99,
+        "name": "name"
+      },
+      "2": {
+        "id": 100,
+        "name": "name"
+      }
+    }
+  },
+  "2": {
+    "roomName": "code_name",
+    "roomParticipants": {
+      "1": {
+        "id": 150,
+        "name": "name"
+      },
+      "2": {
+        "id": 100,
+        "name": "name"
+      }
+    }
+  }
+}

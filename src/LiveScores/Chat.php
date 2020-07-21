@@ -7,7 +7,7 @@ namespace App\LiveScores;
 
 use App\Config\MessageTypes;
 use App\Repository\MessageRepository;
-use App\Validators\MessageDataValidator;
+use App\Repository\RoomsRepository;
 use DI\ContainerBuilder;
 use Exception;
 use Ratchet\ConnectionInterface;
@@ -16,10 +16,6 @@ use SplObjectStorage;
 
 class Chat implements MessageComponentInterface
 {
-    /**
-     * @var MessageDataValidator
-     */
-    private $validator;
 
     /**
      * @var SplObjectStorage
@@ -31,6 +27,11 @@ class Chat implements MessageComponentInterface
      */
     private $messageRepository;
 
+    /**
+     * @var RoomsRepository
+     */
+    private $roomsRepository;
+
     public function __construct()
     {
         $this->clients = new SplObjectStorage();
@@ -40,65 +41,75 @@ class Chat implements MessageComponentInterface
     private function init(): void
     {
         $container = (new ContainerBuilder())->useAutowiring(true)->build();
-        $this->validator = $container->get(MessageDataValidator::class);
-        $this->messageRepository = $container->get(MessageRepository::class);
+        $this->roomsRepository = $container->get(RoomsRepository::class);
     }
 
     public function onOpen(ConnectionInterface $conn): void
     {
-        $conn->roomId = 0;
-        $conn->id = 0;
+        $_SESSION['id'] = 100;
+        $array = ['2', '6'];
+//        $_SESSION['work'] = array_rand($array, 1);
+        $_SESSION['work'] = '1';
+        $conn->type = $_SESSION['work'] === '2' || $_SESSION['work'] === '6' ? 1 : 2;
+        $conn->id = (int)$_SESSION['id'];
+        $conn->messageRepository = new MessageRepository();
         $this->clients->attach($conn);
     }
 
+    /**
+     * @param ConnectionInterface $conn
+     */
     public function onClose(ConnectionInterface $conn): void
     {
         $this->clients->detach($conn);
     }
 
+    /**
+     * @param ConnectionInterface $conn
+     * @param Exception $e
+     */
     public function onError(ConnectionInterface $conn, Exception $e): void
     {
         $conn->close();
     }
 
+    /**
+     * @param ConnectionInterface $from
+     * @param string $msg
+     */
     public function onMessage(ConnectionInterface $from, $msg): void
     {
-        if ($data = json_decode($msg, true)) {
-            switch ($data['type']) {
+        if ($messageData = json_decode($msg, true)) {
+            switch ($messageData['type']) {
                 case MessageTypes::INIT:
-                    if ($this->validator->validateFirstMessageData($data, $this->clients, $from)) {
-                        $from->messager = new MessageRepository();
-                        $from->token = uniqid();
-                        $from->roomId = (int)$data['roomId'];
-                        $from->id = (int)$data['participantId'];
-                        $from->messager->setPath(sprintf("room_%s", (string)$from->roomId))->getMessagesByRoom();
-                        $returnMessage['type'] = MessageTypes::INIT;
-                        $returnMessage['token'] = md5($from->token);
-                        $from->send(json_encode($returnMessage, 0, 512));
+                    $from->roomId = (int)$messageData['roomId'];
+                    $room = $this->roomsRepository->findChatRoomsWithParticipantsData()[$from->roomId];
+                    $participant = $room['roomParticipants'][$from->type];
+                    if (isset($room) && isset($participant) && $participant['id'] === $from->id) {
+                        $from->name = $participant['name'];
+                        $from->messageRepository->setPath(sprintf('room_%s', (string)$from->roomId));
+                        $outputData = [
+                                'type' => MessageTypes::INIT,
+                                'id' => $from->id,
+                                'data' => $from->messageRepository->getMessagesByRoom()
+                        ];
+                        $from->send(json_encode($outputData, 0, 512));
                     } else {
                         $from->close();
                     }
                     break;
-                case MessageTypes::GET_MESSAGES:
-                    if ($this->validator->validateMessageData($from, $data, $this->clients)) {
-                        $messages = $from->messager->getMessagesByRoom();
-                        $returnMessage['type'] = MessageTypes::GET_MESSAGES;
-                        $returnMessage['token'] = $from->token;
-                        $returnMessage['messages'] = $messages;
-                        $from->send(json_encode($returnMessage, 0, 512));
-                    }
-                    break;
                 case MessageTypes::MESSAGE:
-                    if ($this->validator->validateMessageData($from, $data, $this->clients)) {
+                    if (!empty($messageData['text'])) {
+                        $savedMessage = $from->messageRepository->saveMessage($from, $messageData['text']);
                         foreach ($this->clients as $client) {
                             if ($client->roomId === $from->roomId) {
-                                $client->send($msg);
+                                $outputData = ['type' => MessageTypes::MESSAGE, 'message' => $savedMessage];
+                                $client->send(json_encode($outputData));
                             }
                         }
-                        $from->messager->saveMessage($from->roomId, $from->id, $data['text']);
                     }
                     break;
-                default :
+                default:
                     $from->close();
                     break;
             }

@@ -6,8 +6,6 @@ use Ratchet\Server\IoServer;
 use Ratchet\WebSocket\WsServer;
 
 
-$_SESSION['id'] = uniqid('', true);
-
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 $server = IoServer::factory(
