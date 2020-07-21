@@ -67,19 +67,21 @@ class Chat implements MessageComponentInterface
             switch ($data['type']) {
                 case MessageTypes::INIT:
                     if ($this->validator->validateFirstMessageData($data, $this->clients, $from)) {
+                        $from->messager = new MessageRepository();
                         $from->token = uniqid();
                         $from->roomId = (int)$data['roomId'];
                         $from->id = (int)$data['participantId'];
+                        $from->messager->setPath(sprintf("room_%s", (string)$from->roomId))->getMessagesByRoom();
                         $returnMessage['type'] = MessageTypes::INIT;
-                        $returnMessage['token'] = $from->token;
+                        $returnMessage['token'] = md5($from->token);
                         $from->send(json_encode($returnMessage, 0, 512));
                     } else {
                         $from->close();
                     }
                     break;
-                case MessageTypes::GET_MESSAGES :
+                case MessageTypes::GET_MESSAGES:
                     if ($this->validator->validateMessageData($from, $data, $this->clients)) {
-                        $messages = $this->messageRepository->getMessagesByRoom($from->roomId);
+                        $messages = $from->messager->getMessagesByRoom();
                         $returnMessage['type'] = MessageTypes::GET_MESSAGES;
                         $returnMessage['token'] = $from->token;
                         $returnMessage['messages'] = $messages;
@@ -93,7 +95,7 @@ class Chat implements MessageComponentInterface
                                 $client->send($msg);
                             }
                         }
-                        $this->messageRepository->saveMessage($from->roomId, $from->id, $data['text']);
+                        $from->messager->saveMessage($from->roomId, $from->id, $data['text']);
                     }
                     break;
                 default :

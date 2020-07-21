@@ -4,39 +4,41 @@
 namespace App\Repository;
 
 
-use App\Config\Dbo;
-
 class MessageRepository
 {
-    /**
-     * @var Dbo
-     */
-    private $dbo;
 
     /**
-     * MessageRepository constructor.
-     * @param Dbo $dbo
+     * @var string
      */
-    public function __construct(Dbo $dbo)
-    {
-        $this->dbo = $dbo;
-    }
+    private $path;
 
     /**
-     * @param int $id
      * @return array
      */
-    public function getMessagesByRoom(int $id): array
+    public function getMessagesByRoom(): array
     {
-        $stmt = $this->dbo->query(sprintf("SELECT * FROM chat_messages WHERE room_id = %s", $id));
-        return $stmt->fetchAll();
+        return json_decode(file_get_contents($this->path), true) ? null : [];
     }
 
     public function saveMessage(int $roomId, int $participantId, string $text): void
     {
-        $stmt = $this->dbo->prepare(
-                'INSERT INTO chat_messages(room_id, participant_id, text) VALUES (:rId, :pId, :text)'
-        );
-        $stmt->execute([':rId' => $roomId, ':pId' => $participantId, ':text' => $text]);
+        $messages = json_decode(file_get_contents($this->path), true);
+        $message = ['room' => $roomId, 'particp' => $participantId, 'text' => $text];
+        $messages[] = $message;
+        file_put_contents($this->path, json_encode($messages, JSON_PRETTY_PRINT, 512));
+    }
+
+    /**
+     * @param string $path
+     * @return MessageRepository
+     */
+    public function setPath(string $path)
+    {
+        $this->path = sprintf("%s/data/%s.json", dirname(dirname(__DIR__)), $path);
+        if (!file_exists($path)) {
+            $file = fopen($this->path, 'w');
+            fclose($file);
+        }
+        return $this;
     }
 }

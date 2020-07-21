@@ -12,7 +12,7 @@ class Dbo extends PDO
 
     public function __construct()
     {
-        $ini = __DIR__ . "\config.ini";
+        $ini = __DIR__ . "/config.ini";
         $parse = parse_ini_file($ini, true);
         $driver = $parse ["db_driver"];
         $dsn = "${driver}:";
